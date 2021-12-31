@@ -33,6 +33,7 @@ endif()
 add_executable(
     kal
     src/main.cpp
+    src/ASTGenerator.cpp
 )
 
 # To avoid undefined reference to `llvm::EnableABIBreakingChecks'
