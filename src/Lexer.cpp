@@ -50,7 +50,13 @@ int Lexer::GetToken() {
         IdentifierStr = lastChar;
         while (isalnum((lastChar = Getnextchar())))
             IdentifierStr += lastChar;
-    
+
+        // check for reserved identifiers
+        if (IdentifierStr == "binary")
+            return tok_binary;
+        if (IdentifierStr == "unary")
+            return tok_unary;
+
         return tok_identifier;
     }
 
