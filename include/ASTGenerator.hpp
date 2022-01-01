@@ -2,22 +2,20 @@
 #define ASTGENERATOR_HPP
 
 #include <fstream>
-// #include "Lexer.hpp"
+#include "Lexer.hpp"
 
 namespace kal{
     class ASTGenerator
     {
     private:
         int lastChar = ' ';
-        int currTok;
+        int currToken;
         bool interactShellMode = false;
-        std::ifstream inputFileStrm;
-        void EatFile(std::ifstream &inputFileStrm);
-        bool EatStdioToken();
+        std::string inputFilename;
         void ReplLoop();
         
     public:
-        ASTGenerator(std::string inputFilename);
+        ASTGenerator(const std::string &filename);
         void Generate();
     };
 }
