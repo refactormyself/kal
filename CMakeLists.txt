@@ -35,6 +35,7 @@ add_executable(
     src/main.cpp
     src/ASTGenerator.cpp
     src/Lexer.cpp
+    src/Parser.cpp
 )
 
 # To avoid undefined reference to `llvm::EnableABIBreakingChecks'

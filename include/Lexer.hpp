@@ -9,13 +9,13 @@ namespace kal
     enum Token
     {
         // special tokens
-        tok_eof = -1,
-  
+        tok_eof = -2,
+
         // primary tokens
         tok_identifier = -4,
         tok_integer = -5,
         tok_float = -6,
-        
+
         // operator tokens
         tok_binary = -11,
         tok_unary = -12,
