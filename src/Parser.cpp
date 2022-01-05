@@ -1,41 +1,35 @@
 #include "llvm/Support/raw_ostream.h"
 #include "Parser.hpp"
+#include "CodeGen.hpp"
 
 using namespace kal;
 using namespace llvm;
 
-
-/// LogError* - These are little helper functions for error handling.
-std::unique_ptr<ExprAST> LogError(const char *Str) {
-  fprintf(stderr, "Error: %s\n", Str);
-  return nullptr;
-}
-
-static std::unique_ptr<ExprAST> ParseExpression();
+std::unique_ptr<ExprAST> ParseExpression();
 
 /// integerexpr ::= integer
-std::unique_ptr<ExprAST> Parser::ParseIntegerExpr() {
-  auto Result = std::make_unique<IntegerExprAST>(lexer.IntVal);
+std::shared_ptr<ExprAST> Parser::ParseIntegerExpr() {
+  auto Result = std::make_shared<IntegerExprAST>(lexer.IntVal);
   currToken = lexer.GetToken(); // consume the integer
   return std::move(Result);
 }
 
 /// floatexpr ::= float
-std::unique_ptr<ExprAST> Parser::ParseFloatExpr() {
+std::shared_ptr<ExprAST> Parser::ParseFloatExpr() {
   auto Result = std::make_unique<FloatExprAST>(lexer.IntVal);
   currToken = lexer.GetToken(); // consume the float
   return std::move(Result);
 }
 
 /// parenexpr ::= '(' expression ')'
-std::unique_ptr<ExprAST> Parser::ParseParenExpr() {
+std::shared_ptr<ExprAST> Parser::ParseParenExpr() {
   currToken = lexer.GetToken();  // eat (.
   auto V = ParseExpression();
   if (!V)
     return nullptr;
 
   if (currToken != ')')
-    return LogError("expected ')'");
+    return ErrorLogger::LogError("expected ')'");
   currToken = lexer.GetToken(); // eat ).
   return V;
 }
@@ -44,10 +38,10 @@ std::unique_ptr<ExprAST> Parser::ParseParenExpr() {
 ///   ::= identifierexpr
 ///   ::= numberexpr
 ///   ::= parenexpr
-std::unique_ptr<ExprAST> Parser::ParsePrimary() {
+std::shared_ptr<ExprAST> Parser::ParsePrimary() {
   switch (currToken) {
   default:
-    return LogError("unknown token when expecting an expression");
+    return ErrorLogger::LogError("unknown token when expecting an expression");
   // case tok_identifier:
   //   return ParseIdentifierExpr();
   case tok_integer:
@@ -59,26 +53,71 @@ std::unique_ptr<ExprAST> Parser::ParsePrimary() {
   }
 }
 
+/// binop_rhs
+///   ::= ('+' primary)*
+std::shared_ptr<ExprAST> Parser::ParseBinOpRHS(int ExprPrec,
+                                               std::shared_ptr<ExprAST> LHS) {
+  while (true) {
+    int TokPrec = GetTokenPrecedence();
+    // If this is a binop that binds at least as tightly as the current binop,
+    // consume it, otherwise we are done.
+    if (TokPrec < ExprPrec)
+      return LHS;
+
+    // Okay, we know this is a binop.
+    int BinOp = currToken;
+    currToken = lexer.GetToken(); // eat binop
+
+    // Parse the primary expression after the binary operator.
+    auto RHS = ParsePrimary();
+    if (!RHS)
+      return nullptr;
+
+    // If BinOp binds less tightly with RHS than the operator after RHS, let
+    // the pending operator take RHS as its LHS.
+    int NextPrec = GetTokenPrecedence();
+    if (TokPrec < NextPrec) {
+      RHS = ParseBinOpRHS(TokPrec + 1, std::move(RHS));
+      if (!RHS)
+        return nullptr;
+    }
+
+    // Merge LHS/RHS.
+    LHS = std::make_shared<BinaryExprAST>(BinOp, std::move(LHS), std::move(RHS));
+  }
+}
 
 /// expression
 ///   ::= primary binoprhs
 ///
-std::unique_ptr<ExprAST> Parser::ParseExpression() {
-  // auto LHS = ParsePrimary();
-  // if (!LHS)
-  //   return nullptr;
+std::shared_ptr<ExprAST> Parser::ParseExpression() {
+  auto LHS = ParsePrimary();
+  if (!LHS)
+    return nullptr;
 
-  // return ParseBinOpRHS(0, std::move(LHS));
-
-  return ParsePrimary();
+  return ParseBinOpRHS(0, std::move(LHS));
 }
 
 void Parser::HandleTopLevelExpression() {
   // // Evaluate a top-level expression into an anonymous function.
   // if (ParseTopLevelExpr()) {
 
-  if (ParseExpression()) {
-    fprintf(stderr, "Parsed a top-level expr\n");
+  if (auto exprAST = ParseExpression()) {
+    CodeGen codegen{};
+
+    exprAST->Perform(codegen);
+//  auto *FnIR = exprAST->Perform(codegen);
+//
+////    if (auto *FnIR = exprAST->codegen()) {
+////      if (auto *FnIR = exprAST->Perform(codegen)) {
+//      if (FnIR) {
+//        fprintf(stderr, "Read top-level expression:");
+//        FnIR->print(errs());
+//        fprintf(stderr, "\n");
+//
+//        // Remove the anonymous expression.
+////        FnIR->eraseFromParent();
+//    }
   } else {
     // Skip token for error recovery.
     currToken = lexer.GetToken();
@@ -100,4 +139,18 @@ int Parser::EatTokens(int token) {
   }
 
   return currToken;
+}
+
+std::map<char, int> Parser::BinopPrecedence;
+
+/// GetTokPrecedence - Get the precedence of the pending binary operator token.
+int Parser::GetTokenPrecedence() const {
+  if (!isascii(currToken))
+    return -1;
+
+  // Make sure it's a declared binop.
+  int TokPrec = Parser::BinopPrecedence[currToken];
+  if (TokPrec <= 0)
+    return -1;
+  return TokPrec;
 }

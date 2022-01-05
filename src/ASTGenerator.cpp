@@ -1,6 +1,5 @@
 #include "ASTGenerator.hpp"
 #include "llvm/Support/raw_ostream.h"
-#include "Parser.hpp"
 
 using namespace kal;
 using namespace llvm;
@@ -28,6 +27,7 @@ void ASTGenerator::Generate() {
     }
 }
 
+[[noreturn]]
 void ASTGenerator::ReplLoop() {
     Lexer lexer;
     Parser parser(lexer); 

@@ -19,6 +19,15 @@ cl::opt<string> InputFilename(cl::Positional, cl::desc("<input file>"), cl::init
 int main(int argc, char **argv)
 {
   cl::ParseCommandLineOptions(argc, argv, " Kal is language inspired on LLVM basic tutorial \n\n");
+
+  // Install standard binary operators.
+  // 1 is lowest precedence.
+  Parser::BinopPrecedence['<'] = 10;
+  Parser::BinopPrecedence['+'] = 20;
+  Parser::BinopPrecedence['-'] = 20;
+  Parser::BinopPrecedence['/'] = 40;
+  Parser::BinopPrecedence['*'] = 40;  // highest.
+
   ASTGenerator Astgen(InputFilename);
   Astgen.Generate();
 

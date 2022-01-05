@@ -36,8 +36,16 @@ add_executable(
     src/ASTGenerator.cpp
     src/Lexer.cpp
     src/Parser.cpp
-)
+        src/AST.cpp src/CodeGen.cpp include/CodeGen.hpp)
 
 # To avoid undefined reference to `llvm::EnableABIBreakingChecks'
 # ref: https://stackoverflow.com/a/63499379
 target_link_libraries(kal LLVMSupport)
+
+# Find the libraries that correspond to the LLVM components
+# that we wish to use
+llvm_map_components_to_libnames(llvm_libs support core orcjit native irreader)
+
+target_link_libraries (kal
+        ${llvm_libs}
+)
