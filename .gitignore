@@ -1,4 +1,5 @@
 build/
 cmake-build-debug-llvm/
+cmake-build-debug/
 notes.md
 me.sh

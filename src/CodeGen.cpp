@@ -13,10 +13,20 @@ std::unique_ptr<llvm::IRBuilder<>> CodeGen::Builder;
 
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
     Result = llvm::ConstantInt::get(Type::getInt32Ty(TheContext), intExprAST->GetVal(), true);
+
+    if(!Result) return;
+    // print it out
+    Result->print(errs());
+    fprintf(stderr, "\n");
 }
 
 void CodeGen::On(std::shared_ptr<FloatExprAST> floatExprAST) {
     Result = ConstantFP::get(TheContext, APFloat(floatExprAST->GetVal()));
+
+    if(!Result) return;
+    // print it out
+    Result->print(errs());
+    fprintf(stderr, "\n");
 }
 
 void CodeGen::On(std::shared_ptr<UnaryExprAST> uniExprAST) {
@@ -134,7 +144,6 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
         // Remove the anonymous expression.
 //        FnIR->eraseFromParent();
     }
-
 }
 
 llvm::Value *CodeGen::GetResult() {

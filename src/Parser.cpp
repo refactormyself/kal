@@ -16,7 +16,7 @@ std::shared_ptr<ExprAST> Parser::ParseIntegerExpr() {
 
 /// floatexpr ::= float
 std::shared_ptr<ExprAST> Parser::ParseFloatExpr() {
-  auto Result = std::make_unique<FloatExprAST>(lexer.IntVal);
+  auto Result = std::make_unique<FloatExprAST>(lexer.FloatVal);
   currToken = lexer.GetToken(); // consume the float
   return std::move(Result);
 }

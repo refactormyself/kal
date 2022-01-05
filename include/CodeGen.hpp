@@ -24,7 +24,7 @@ namespace kal {
     private:
         std::unique_ptr<llvm::Module> TheModule;
         std::map<std::string, llvm::Value *> NamedValues;
-        llvm::Value *Result;
+        llvm::Value *Result = nullptr;
 
     public:
         void On(std::shared_ptr<IntegerExprAST>intExprAST) override;
