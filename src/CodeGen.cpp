@@ -8,11 +8,11 @@ using namespace llvm;
 using namespace kal;
 using namespace std;
 
-llvm::LLVMContext CodeGen::TheContext;
+std::unique_ptr<llvm::LLVMContext> CodeGen::TheContext;
 std::unique_ptr<llvm::IRBuilder<>> CodeGen::Builder;
 
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
-    Result = llvm::ConstantInt::get(Type::getInt32Ty(TheContext), intExprAST->GetVal(), true);
+    Result = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);
 
     if(!Result) return;
     // print it out
@@ -21,7 +21,7 @@ void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
 }
 
 void CodeGen::On(std::shared_ptr<FloatExprAST> floatExprAST) {
-    Result = ConstantFP::get(TheContext, APFloat(floatExprAST->GetVal()));
+    Result = ConstantFP::get(*TheContext, APFloat(floatExprAST->GetVal()));
 
     if(!Result) return;
     // print it out
@@ -97,12 +97,12 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
             case '<':
                 Result = CodeGen::Builder->CreateFCmpULT(Left, Right, "fcmplttmp");
                 // Convert bool 0/1 to double 0.0 or 1.0
-                Result = CodeGen::Builder->CreateUIToFP(Result, Type::getDoubleTy(CodeGen::TheContext), "fconvtmp");
+                Result = CodeGen::Builder->CreateUIToFP(Result, Type::getDoubleTy(*CodeGen::TheContext), "fconvtmp");
                 return Result;
             case '>':
                 Result = CodeGen::Builder->CreateFCmpUGT(Left, Right, "fcmpgttmp");
                 // Convert bool 0/1 to double 0.0 or 1.0
-                Result = CodeGen::Builder->CreateUIToFP(Result, Type::getDoubleTy(CodeGen::TheContext), "fconvtmp");
+                Result = CodeGen::Builder->CreateUIToFP(Result, Type::getDoubleTy(*CodeGen::TheContext), "fconvtmp");
                 return Result;
             default:
                 ErrorLogger::LogError("invalid binary operator");
