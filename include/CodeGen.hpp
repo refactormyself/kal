@@ -32,6 +32,8 @@ namespace kal {
         void On(std::shared_ptr<UnaryExprAST> uniExprAST) override;
         void On(std::shared_ptr<BinaryExprAST> binExprAST) override;
         void On(std::shared_ptr<PrototypeAST> prototypeAST) override;
+        void On(std::shared_ptr<FunctionAST> functionAST) override;
+
         llvm::Value *GetResult();
         static std::unique_ptr<llvm::LLVMContext> TheContext;
         static std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> Builder;

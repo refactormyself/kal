@@ -27,6 +27,11 @@ void PrototypeAST::Perform(Operation &op) {
     return op.On(ast);
 }
 
+void FunctionAST::Perform(Operation &op) {
+    std::shared_ptr<FunctionAST> ast{shared_from_this()};
+    return op.On(ast);
+}
+
 double FloatExprAST::GetVal() const {
     return Val;
 }
@@ -45,4 +50,12 @@ const std::shared_ptr<ExprAST> &BinaryExprAST::getRHS() const {
 
 const std::vector<std::string> &PrototypeAST::getArgs() const {
     return Args;
+}
+
+const std::shared_ptr<ExprAST> &FunctionAST::getBody() const {
+    return Body;
+}
+
+const std::shared_ptr<PrototypeAST> &FunctionAST::getPrototype() const {
+    return Proto;
 }

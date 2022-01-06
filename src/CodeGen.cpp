@@ -127,3 +127,7 @@ llvm::Value *CodeGen::GetResult() {
 void CodeGen::On(std::shared_ptr<PrototypeAST> prototypeAST) {
     Result = nullptr;
 }
+
+void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
+    Result = nullptr;
+}

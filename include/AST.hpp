@@ -93,6 +93,21 @@ namespace kal {
         const std::vector<std::string> &getArgs() const;
     };
 
+/// FunctionAST - This class represents a function definition itself.
+    class FunctionAST : public ExprAST, public std::enable_shared_from_this<FunctionAST>{
+        std::shared_ptr<PrototypeAST> Proto;
+        std::shared_ptr<ExprAST> Body;
+
+    public:
+        FunctionAST(std::shared_ptr<PrototypeAST> Proto,
+                    std::shared_ptr<ExprAST> Body)
+                : Proto(std::move(Proto)), Body(std::move(Body)) {}
+
+        void Perform(Operation &op) override;
+        const std::shared_ptr<PrototypeAST> &getPrototype() const;
+        const std::shared_ptr<ExprAST> &getBody() const;
+    };
+
     class Operation
     {
     public:
@@ -101,6 +116,7 @@ namespace kal {
         virtual void On(std::shared_ptr<UnaryExprAST> uniExprAST) = 0;
         virtual void On(std::shared_ptr<BinaryExprAST> binExprAST) = 0;
         virtual void On(std::shared_ptr<PrototypeAST> prototypeAST) = 0;
+        virtual void On(std::shared_ptr<FunctionAST> functionAST) = 0;
     };
 }
 #endif //AST_HPP
