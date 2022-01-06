@@ -10,27 +10,28 @@ using namespace std;
 
 std::unique_ptr<llvm::LLVMContext> CodeGen::TheContext;
 std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> CodeGen::Builder;
+std::unique_ptr<llvm::Module> CodeGen::TheModule;
 
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
-    Result = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);
+    valueResult = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);
 
-    if(!Result) return;
+    if(!valueResult) return;
     // print it out
-    Result->print(errs());
+    valueResult->print(errs());
     fprintf(stderr, "\n");
 }
 
 void CodeGen::On(std::shared_ptr<FloatExprAST> floatExprAST) {
-    Result = ConstantFP::get(*TheContext, APFloat(floatExprAST->GetVal()));
+    valueResult = ConstantFP::get(*TheContext, APFloat(floatExprAST->GetVal()));
 
-    if(!Result) return;
+    if(!valueResult) return;
     // print it out
-    Result->print(errs());
+    valueResult->print(errs());
     fprintf(stderr, "\n");
 }
 
 void CodeGen::On(std::shared_ptr<UnaryExprAST> uniExprAST) {
-    Result = nullptr;
+    valueResult = nullptr;
 }
 
 Value * CreateOp(char Op, Value *Left, Value *Right) {
@@ -77,7 +78,11 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
             case '/':
                 return BinaryOperator::CreateFDiv(Left, Right, "idivtmp");
             case '<':
-                return new FCmpInst(FCmpInst::ICMP_ULT, Left, Right);
+                return//
+// Created by saheed on 1/6/22.
+//
+
+ new FCmpInst(FCmpInst::ICMP_ULT, Left, Right);
             case '>':
                 // TODO: Convert bool 0/1 to double 0.0 or 1.0
                 return new FCmpInst(FCmpInst::ICMP_UGT, Left, Right);
@@ -98,9 +103,9 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
 //    Value *Right = binExprAST->getRHS()->Perform(codegen);
 
     binExprAST->getLHS()->Perform(codegen);
-    auto Left = codegen.GetResult();
+    auto Left = codegen.GetValueResult();
     binExprAST->getRHS()->Perform(codegen);
-    auto Right = codegen.GetResult();
+    auto Right = codegen.GetValueResult();
 
     if (!Left || !Right)
         return;
@@ -120,14 +125,67 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
     } else ErrorLogger::LogError("No IR was generated!");
 }
 
-llvm::Value *CodeGen::GetResult() {
-    return Result;
+llvm::Value *CodeGen::GetValueResult() {
+    return valueResult;
+}
+
+llvm::Function *CodeGen::GetFunctionResult() {
+    return functionResult;
 }
 
 void CodeGen::On(std::shared_ptr<PrototypeAST> prototypeAST) {
-    Result = nullptr;
+    // Make the function type:  double(double,double) etc.
+    std::vector<Type *> Doubles(prototypeAST->getArgs().size(), Type::getDoubleTy(*TheContext));
+    FunctionType *FT = FunctionType::get(Type::getDoubleTy(*TheContext),
+                                         Doubles, false);
+
+    functionResult = Function::Create(FT, Function::ExternalLinkage,
+                                      prototypeAST->getName(), TheModule.get());
+
+    // Set names for all arguments.
+    unsigned Idx = 0;
+    for (auto &Arg: functionResult->args())
+        Arg.setName(prototypeAST->getArgs()[Idx++]);
 }
 
 void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
-    Result = nullptr;
+    CodeGen codegen{};
+    auto proto = functionAST->getPrototype();
+    auto body = functionAST->getBody();
+
+    // First, check for an existing function from a previous 'extern' declaration.
+    Function *TheFunction = TheModule->getFunction(proto->getName());
+
+    if (!TheFunction) {
+        proto->Perform(codegen);
+        TheFunction = codegen.GetFunctionResult();
+    }
+
+    if (!TheFunction)
+        return;
+
+    // Create a new basic block to start insertion into.
+    BasicBlock *BB = BasicBlock::Create(*TheContext, "entry", TheFunction);
+    Builder->SetInsertPoint(BB);
+
+    // Record the function arguments in the NamedValues map.
+    NamedValues.clear();
+    for (auto &Arg : TheFunction->args())
+        NamedValues[std::string(Arg.getName())] = &Arg;
+
+    body->Perform(codegen);
+    if (Value *RetVal = codegen.GetValueResult()) {
+        // Finish off the function.
+        Builder->CreateRet(RetVal);
+
+        // Validate the generated code, checking for consistency.
+        verifyFunction(*TheFunction);
+
+        functionResult = TheFunction;
+        return;
+    }
+
+    // Error reading body, remove function.
+    TheFunction->eraseFromParent();
+    functionResult = nullptr;
 }

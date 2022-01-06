@@ -5,6 +5,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include "llvm/IR/Constant.h"
+#include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include <llvm/IR/NoFolder.h>
 
@@ -24,7 +25,8 @@ namespace kal {
     class CodeGen : public Operation {
     private:
         std::map<std::string, llvm::Value *> NamedValues;
-        llvm::Value *Result = nullptr;
+        llvm::Value *valueResult = nullptr;
+        llvm::Function *functionResult = nullptr;
 
     public:
         void On(std::shared_ptr<IntegerExprAST>intExprAST) override;
@@ -34,7 +36,8 @@ namespace kal {
         void On(std::shared_ptr<PrototypeAST> prototypeAST) override;
         void On(std::shared_ptr<FunctionAST> functionAST) override;
 
-        llvm::Value *GetResult();
+        llvm::Value *GetValueResult();
+        llvm::Function *GetFunctionResult();
         static std::unique_ptr<llvm::LLVMContext> TheContext;
         static std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> Builder;
         static std::unique_ptr<llvm::Module> TheModule;

@@ -10,7 +10,7 @@ ASTGenerator::ASTGenerator(const std::string &filename) {
 
 //    Initialise Program's Context
     CodeGen::TheContext = std::make_unique<LLVMContext>();
-    // CodeGen::TheModule = std::make_unique<Module>("my cool jit", *CodeGen::TheContext);
+    CodeGen::TheModule = std::make_unique<Module>("my module", *CodeGen::TheContext);
 
     // Create a new builder for the module.
     CodeGen::Builder = std::make_unique<IRBuilder<llvm::NoFolder>>(*CodeGen::TheContext);
