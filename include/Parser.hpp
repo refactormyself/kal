@@ -28,7 +28,7 @@ namespace kal {
   class Parser
   {
   private:
-    Lexer &lexer;
+    Lexer lexer;
     int currToken = 0;
 
     std::shared_ptr<ExprAST> ParseIntegerExpr();
@@ -43,8 +43,10 @@ namespace kal {
     int GetTokenPrecedence() const;
 
   public:
-    explicit Parser(Lexer &lex) : lexer(lex) {}
-    int EatTokens(int token);
+    explicit Parser(const std::string &filename) : lexer(filename){}
+    Parser() = default;
+
+    int EatToken();
     static std::map<char, int> BinopPrecedence;
   };
 }

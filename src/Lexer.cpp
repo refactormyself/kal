@@ -8,23 +8,18 @@ using namespace llvm;
 using namespace kal;
 
 Lexer::Lexer(const std::string &inputFilename) {
-    if (inputFilename == "-" || inputFilename == "")
-    {
-        outs() << "No file name supplied.\nSwitching to Interactive Shell Mode.\n";
+    if (inputFilename == "-" || inputFilename.empty()) {
         interactShellMode = true;
-        
-        // Enter the interactive loop
-        // ReplLoop(Astgen);
+        return;
+    }
+
+    inputFileStrm = std::ifstream(inputFilename.c_str());
+    if (inputFileStrm.good()) {
+        // outs() << "Yep, I can read the file " << inputFilename << " \n";
+        interactShellMode = false;
     } else {
-        inputFileStrm = std::ifstream(inputFilename.c_str());
-        if (inputFileStrm.good())
-        {
-            outs() << "Yep, I can read the file " << inputFilename << " \n";
-            interactShellMode = false;
-        } else {
-            outs() << "Error: There is a problem reading the file " 
-                   << inputFilename << " ! \n";
-        }
+        outs() << "Error: There is a problem reading the file "
+               << inputFilename << " ! \n";
     }
 }
 
@@ -42,9 +37,7 @@ int Lexer::GetToken() {
     while (isspace(lastChar))
         lastChar  = Getnextchar();
 
-
     // buffer the next set of char => token
-
     // Token identifier: [a-zA-Z][a-zA-Z0-9]*
     if (isalpha(lastChar)) {
         IdentifierStr = lastChar;
@@ -77,7 +70,6 @@ int Lexer::GetToken() {
                     return thisChar; // [0 - 255] is designated unknown token
                 }
             }
-            
         } while (isdigit(lastChar) || lastChar == '.');
 
         if (has1dot) {
@@ -103,7 +95,6 @@ int Lexer::GetToken() {
     // Check for end of file.  Don't eat the EOF.
     if (lastChar == EOF)
         return tok_eof;
-
 
     // return unknown token
     int thisChar = lastChar;

@@ -31,10 +31,10 @@ namespace kal
 
     public:
         Lexer() = default;
-        Lexer(const std::string &inputFilename);
+        explicit Lexer(const std::string &inputFilename);
         int GetToken();
-        double FloatVal;
-        int IntVal;
+        double FloatVal = 0;
+        int IntVal = 0;
         std::string IdentifierStr;
     };
 }

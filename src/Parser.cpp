@@ -125,9 +125,8 @@ void Parser::HandleTopLevelExpression() {
 }
 
 /// top ::=  expression | ';'
-int Parser::EatTokens(int token) {
-  // currToken = token;
-  switch (currToken = token) {
+int Parser::EatToken() {
+  switch (currToken = lexer.GetToken()) {
   case tok_eof:
     break;
   case ';': // ignore top-level semicolons.

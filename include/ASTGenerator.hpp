@@ -2,22 +2,18 @@
 #define ASTGENERATOR_HPP
 
 #include <fstream>
-#include "Lexer.hpp"
+#include "CodeGen.hpp"
 #include "Parser.hpp"
 
 namespace kal{
     class ASTGenerator
     {
     private:
-        int lastChar = ' ';
         int currToken = 0;
         bool interactShellMode = false;
-        std::string inputFilename;
-
-        [[noreturn]] void ReplLoop();
-        
+        Parser parser;
     public:
-        ASTGenerator(const std::string &filename);
+        explicit ASTGenerator(const std::string &filename);
         void Generate();
     };
 }

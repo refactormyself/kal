@@ -34,41 +34,28 @@ void CodeGen::On(std::shared_ptr<UnaryExprAST> uniExprAST) {
 }
 
 Value * CreateOp(char Op, Value *Left, Value *Right) {
-//    std::unique_ptr<llvm::IRBuilder<>> Builder;
     Value *Result;
 
     if (Left->getType()->isIntegerTy()) {
-        ErrorLogger::LogError("=== OP IS INTEGER ! ===");
-
-        if (!Right->getType()->isIntegerTy()) { // TODO: use Builder->CreateFPToUI()
-            Right->mutateType(Left->getType());
-            ErrorLogger::LogError("=== RHS IS Mutated ! ===");
+        if (Right->getType() != Left->getType()) {
+//            Right->mutateType(Left->getType());
+//            Right = CastInst::Create(llvm::Instruction::FPToUI, Right, Left->getType(), "fptoui");
+            Right = CodeGen::Builder->CreateFPToUI(Right, Left->getType(), "fptoui");
         }
-        ErrorLogger::LogError("=== ABOUT TO SWITCH OP ! ===");
 
         switch (Op) {
             case '+':
-                ErrorLogger::LogError("=== ABOUT TO + ===");
-                Left->print(errs());
-                Right->print(errs());
-                Result = CodeGen::Builder->CreateAdd(Left, Right, "iaddtmp");
-                ErrorLogger::LogError("=== DONE WITH + ===");
-                return Result;
+                return BinaryOperator::CreateAdd(Left, Right, "iaddtmp");
             case '-':
-                Result = CodeGen::Builder->CreateSub(Left, Right, "isubtmp");
-                return Result;
+                return BinaryOperator::CreateSub(Left, Right, "isubtmp");
             case '*':
-                Result = CodeGen::Builder->CreateMul(Left, Right, "imultmp");
-                return Result;
+                return BinaryOperator::CreateMul(Left, Right, "imultmp");
             case '/':
-                Result = CodeGen::Builder->CreateUDiv(Left, Right, "idivtmp");
-                return Result;
+                return BinaryOperator::CreateUDiv(Left, Right, "idivtmp");
             case '<':
-                Result = CodeGen::Builder->CreateICmpULT(Left, Right, "icmplttmp");
-                return Result;
+                return new ICmpInst(ICmpInst::ICMP_ULT, Left, Right);
             case '>':
-                Result = CodeGen::Builder->CreateICmpUGT(Left, Right, "icmpgttmp");
-                return Result;
+                return new ICmpInst(ICmpInst::ICMP_UGT, Left, Right);
             default:
                 ErrorLogger::LogError("invalid binary operator");
                 return nullptr;
@@ -76,34 +63,24 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
     }
 
     if (Left->getType()->isDoubleTy() || Left->getType()->isFloatTy()) {
-        ErrorLogger::LogError("=== OP IS FLOAT ! ===");
+        if (Right->getType() != Left->getType())
+            Right = CodeGen::Builder->CreateUIToFP(Right, Left->getType(), "uitofp");
 
-        if (!(Right->getType()->isDoubleTy() || Right->getType()->isFloatTy())) // TODO: use Builder->CreateUIToFP()
-            Right->mutateType(Left->getType());
 
         switch (Op) {
             case '+':
-                Result = CodeGen::Builder->CreateFAdd(Left, Right, "faddtmp");
-                return Result;
+                return BinaryOperator::CreateFAdd(Left, Right, "iaddtmp");
             case '-':
-                Result = CodeGen::Builder->CreateFSub(Left, Right, "fsubtmp");
-                return Result;
+                return BinaryOperator::CreateFSub(Left, Right, "isubtmp");
             case '*':
-                Result = CodeGen::Builder->CreateFMul(Left, Right, "fmultmp");
-                return Result;
+                return BinaryOperator::CreateFMul(Left, Right, "imultmp");
             case '/':
-                Result = CodeGen::Builder->CreateFDiv(Left, Right, "fdivtmp");
-                return Result;
+                return BinaryOperator::CreateFDiv(Left, Right, "idivtmp");
             case '<':
-                Result = CodeGen::Builder->CreateFCmpULT(Left, Right, "fcmplttmp");
-                // Convert bool 0/1 to double 0.0 or 1.0
-                Result = CodeGen::Builder->CreateUIToFP(Result, Type::getDoubleTy(*CodeGen::TheContext), "fconvtmp");
-                return Result;
+                return new FCmpInst(FCmpInst::ICMP_ULT, Left, Right);
             case '>':
-                Result = CodeGen::Builder->CreateFCmpUGT(Left, Right, "fcmpgttmp");
-                // Convert bool 0/1 to double 0.0 or 1.0
-                Result = CodeGen::Builder->CreateUIToFP(Result, Type::getDoubleTy(*CodeGen::TheContext), "fconvtmp");
-                return Result;
+                // TODO: Convert bool 0/1 to double 0.0 or 1.0
+                return new FCmpInst(FCmpInst::ICMP_UGT, Left, Right);
             default:
                 ErrorLogger::LogError("invalid binary operator");
                 return nullptr;
@@ -128,11 +105,8 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
     if (!Left || !Right)
         return;
 
-    ErrorLogger::LogError("=== ABOUT TO CREATE OP ! ===");
     // the type of LHS prevails
     auto FnIR = CreateOp(binExprAST->getOp(), Left, Right);
-
-    ErrorLogger::LogError("===|++++=====|");
 
 //    if (auto *FnIR = exprAST->codegen()) {
 //      if (auto *FnIR = exprAST->Perform(codegen)) {
@@ -143,7 +117,7 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
 
         // Remove the anonymous expression.
 //        FnIR->eraseFromParent();
-    }
+    } else ErrorLogger::LogError("No IR was generated!");
 }
 
 llvm::Value *CodeGen::GetResult() {
