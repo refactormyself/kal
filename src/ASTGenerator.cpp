@@ -15,7 +15,7 @@ ASTGenerator::ASTGenerator(const std::string &filename) {
 //    CodeGen::TheModule = std::make_unique<Module>("my cool jit", *CodeGen::TheContext);
 
     // Create a new builder for the module.
-    CodeGen::Builder = std::make_unique<IRBuilder<>>(*CodeGen::TheContext);
+    CodeGen::Builder = std::make_unique<IRBuilder<llvm::NoFolder>>(*CodeGen::TheContext);
 }
 
 void ASTGenerator::Generate() {

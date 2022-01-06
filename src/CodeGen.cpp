@@ -9,7 +9,7 @@ using namespace kal;
 using namespace std;
 
 std::unique_ptr<llvm::LLVMContext> CodeGen::TheContext;
-std::unique_ptr<llvm::IRBuilder<>> CodeGen::Builder;
+std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> CodeGen::Builder;
 
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
     Result = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);

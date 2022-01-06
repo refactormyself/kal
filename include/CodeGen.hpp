@@ -6,6 +6,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/IRBuilder.h"
+#include <llvm/IR/NoFolder.h>
 
 #include "Parser.hpp"
 #include "AST.hpp"
@@ -32,7 +33,7 @@ namespace kal {
         void On(std::shared_ptr<BinaryExprAST> binExprAST) override;
         llvm::Value *GetResult();
         static std::unique_ptr<llvm::LLVMContext> TheContext;
-        static std::unique_ptr<llvm::IRBuilder<>> Builder;
+        static std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> Builder;
         static std::unique_ptr<llvm::Module> TheModule;
     };
 }
