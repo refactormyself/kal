@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <llvm/IR/Value.h>
+#include <utility>
+#include <vector>
 
 namespace kal {
     class Operation;
@@ -75,6 +77,22 @@ namespace kal {
         void Perform(Operation &op) override;
     };
 
+/// PrototypeAST - This class represents the "prototype" for a function,
+/// which captures its name, and its argument names (thus implicitly the number
+/// of arguments the function takes).
+    class PrototypeAST : public ExprAST, public std::enable_shared_from_this<PrototypeAST> {
+        std::string Name;
+        std::vector<std::string> Args;
+
+    public:
+        PrototypeAST(std::string Name, std::vector<std::string> Args)
+                : Name(std::move(Name)), Args(std::move(Args)) {}
+
+        void Perform(Operation &op) override;
+        const std::string &getName() const { return Name; }
+        const std::vector<std::string> &getArgs() const;
+    };
+
     class Operation
     {
     public:
@@ -82,6 +100,7 @@ namespace kal {
         virtual void On(std::shared_ptr<FloatExprAST> floatExprAST) = 0;
         virtual void On(std::shared_ptr<UnaryExprAST> uniExprAST) = 0;
         virtual void On(std::shared_ptr<BinaryExprAST> binExprAST) = 0;
+        virtual void On(std::shared_ptr<PrototypeAST> prototypeAST) = 0;
     };
 }
 #endif //AST_HPP

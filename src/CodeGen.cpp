@@ -123,3 +123,7 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
 llvm::Value *CodeGen::GetResult() {
     return Result;
 }
+
+void CodeGen::On(std::shared_ptr<PrototypeAST> prototypeAST) {
+    Result = nullptr;
+}

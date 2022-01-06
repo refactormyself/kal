@@ -22,6 +22,11 @@ void UnaryExprAST::Perform(Operation &op) {
     return op.On(ast);
 }
 
+void PrototypeAST::Perform(Operation &op) {
+    std::shared_ptr<PrototypeAST> ast{shared_from_this()};
+    return op.On(ast);
+}
+
 double FloatExprAST::GetVal() const {
     return Val;
 }
@@ -36,4 +41,8 @@ const std::shared_ptr<ExprAST> &BinaryExprAST::getLHS() const {
 
 const std::shared_ptr<ExprAST> &BinaryExprAST::getRHS() const {
     return RHS;
+}
+
+const std::vector<std::string> &PrototypeAST::getArgs() const {
+    return Args;
 }
