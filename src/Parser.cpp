@@ -98,11 +98,21 @@ std::shared_ptr<ExprAST> Parser::ParseExpression() {
   return ParseBinOpRHS(0, std::move(LHS));
 }
 
-void Parser::HandleTopLevelExpression() {
-  // // Evaluate a top-level expression into an anonymous function.
-  // if (ParseTopLevelExpr()) {
 
-  if (auto exprAST = ParseExpression()) {
+/// toplevelexpr ::= expression
+std::shared_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
+    if (auto E = ParseExpression()) {
+        // Make an anonymous proto.
+        auto Proto = std::make_shared<PrototypeAST>("__anon_expr",
+                                                    std::vector<std::string>());
+        return std::make_shared<FunctionAST>(std::move(Proto), std::move(E));
+    }
+    return nullptr;
+}
+
+void Parser::HandleTopLevelExpression() {
+  // Evaluate a top-level expression into an anonymous function.
+  if (auto exprAST = ParseTopLevelExpr()) {
     CodeGen codegen{};
 
     exprAST->Perform(codegen);

@@ -15,19 +15,19 @@ std::unique_ptr<llvm::Module> CodeGen::TheModule;
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
     valueResult = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);
 
-    if(!valueResult) return;
-    // print it out
-    valueResult->print(errs());
-    fprintf(stderr, "\n");
+//    if(!valueResult) return;
+//    // print it out
+//    valueResult->print(errs());
+//    fprintf(stderr, "\n");
 }
 
 void CodeGen::On(std::shared_ptr<FloatExprAST> floatExprAST) {
     valueResult = ConstantFP::get(*TheContext, APFloat(floatExprAST->GetVal()));
 
-    if(!valueResult) return;
-    // print it out
-    valueResult->print(errs());
-    fprintf(stderr, "\n");
+//    if(!valueResult) return;
+//    // print it out
+//    valueResult->print(errs());
+//    fprintf(stderr, "\n");
 }
 
 void CodeGen::On(std::shared_ptr<UnaryExprAST> uniExprAST) {
@@ -35,8 +35,6 @@ void CodeGen::On(std::shared_ptr<UnaryExprAST> uniExprAST) {
 }
 
 Value * CreateOp(char Op, Value *Left, Value *Right) {
-    Value *Result;
-
     if (Left->getType()->isIntegerTy()) {
         if (Right->getType() != Left->getType()) {
 //            Right->mutateType(Left->getType());
@@ -78,11 +76,7 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
             case '/':
                 return BinaryOperator::CreateFDiv(Left, Right, "idivtmp");
             case '<':
-                return//
-// Created by saheed on 1/6/22.
-//
-
- new FCmpInst(FCmpInst::ICMP_ULT, Left, Right);
+                return new FCmpInst(FCmpInst::ICMP_ULT, Left, Right);
             case '>':
                 // TODO: Convert bool 0/1 to double 0.0 or 1.0
                 return new FCmpInst(FCmpInst::ICMP_UGT, Left, Right);
@@ -111,18 +105,18 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
         return;
 
     // the type of LHS prevails
-    auto FnIR = CreateOp(binExprAST->getOp(), Left, Right);
+    valueResult = CreateOp(binExprAST->getOp(), Left, Right);
 
-//    if (auto *FnIR = exprAST->codegen()) {
-//      if (auto *FnIR = exprAST->Perform(codegen)) {
-    if (FnIR) {
-        fprintf(stderr, "Read top-level expression:");
-        FnIR->print(errs());
-        fprintf(stderr, "\n");
-
-        // Remove the anonymous expression.
+////    if (auto *FnIR = exprAST->codegen()) {
+////      if (auto *FnIR = exprAST->Perform(codegen)) {
+//    if (FnIR) {
+//        fprintf(stderr, "Read top-level expression:");
+//        FnIR->print(errs());
+//        fprintf(stderr, "\n");
+//
+//        // Remove the anonymous expression.
 //        FnIR->eraseFromParent();
-    } else ErrorLogger::LogError("No IR was generated!");
+//    } else ErrorLogger::LogError("No IR was generated!");
 }
 
 llvm::Value *CodeGen::GetValueResult() {
@@ -174,7 +168,8 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
         NamedValues[std::string(Arg.getName())] = &Arg;
 
     body->Perform(codegen);
-    if (Value *RetVal = codegen.GetValueResult()) {
+    Value *RetVal = codegen.GetValueResult();
+    if (RetVal) {
         // Finish off the function.
         Builder->CreateRet(RetVal);
 
@@ -182,9 +177,12 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
         verifyFunction(*TheFunction);
 
         functionResult = TheFunction;
+        errs() << *TheFunction;
         return;
     }
 
+//    errs() << *TheFunction;
+    errs() << "Error reading body.\n";
     // Error reading body, remove function.
     TheFunction->eraseFromParent();
     functionResult = nullptr;

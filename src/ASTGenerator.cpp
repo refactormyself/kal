@@ -22,4 +22,5 @@ void ASTGenerator::Generate() {
             fprintf(stderr, "kal> ");
         currToken = parser.EatToken();
     } while (currToken != tok_eof);
+//    errs() << *CodeGen::TheModule;
 }
