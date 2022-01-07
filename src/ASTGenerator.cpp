@@ -17,10 +17,10 @@ ASTGenerator::ASTGenerator(const std::string &filename) {
 }
 
 void ASTGenerator::Generate() {
-    do {
+    while (currToken != tok_eof) {
         if (interactShellMode)
             fprintf(stderr, "kal> ");
         currToken = parser.EatToken();
-    } while (currToken != tok_eof);
+    }
 //    errs() << *CodeGen::TheModule;
 }
