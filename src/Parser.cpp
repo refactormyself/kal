@@ -138,9 +138,8 @@ void Parser::HandleTopLevelExpression() {
 int Parser::EatToken() {
   switch (currToken = lexer.GetToken()) {
   case tok_eof:
-    break;
+  case tok_carr_ret:
   case ';': // ignore top-level semicolons.
-    currToken = lexer.GetToken();
     break;
   default:
     HandleTopLevelExpression();

@@ -34,8 +34,13 @@ int Lexer::GetToken() {
     static int lastChar = ' '; // we start with whitespace
 
     // Skip any whitespace.
-    while (isspace(lastChar))
+    while (isspace(lastChar) && lastChar != 10)
         lastChar  = Getnextchar();
+
+    if (lastChar == 10) {// treat return key specially in REPL
+        lastChar = ' ';
+        return tok_carr_ret;
+    }
 
     // buffer the next set of char => token
     // Token identifier: [a-zA-Z][a-zA-Z0-9]*

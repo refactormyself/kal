@@ -9,7 +9,9 @@ namespace kal
     enum Token
     {
         // special tokens
+        tok_exit = -1,  // explicit exit
         tok_eof = -2,
+        tok_carr_ret = -3,  // return key char(10)
 
         // primary tokens
         tok_identifier = -4,
