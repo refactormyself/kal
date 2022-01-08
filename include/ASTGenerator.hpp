@@ -14,7 +14,9 @@ namespace kal{
         Parser parser;
     public:
         explicit ASTGenerator(const std::string &filename);
-        void Generate();
+        std::string Generate();
+
+        bool IsREPLmode();
     };
 }
 #endif //ASTGENERATOR_HPP

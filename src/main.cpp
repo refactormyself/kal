@@ -29,7 +29,15 @@ int main(int argc, char **argv)
   Parser::BinopPrecedence['*'] = 40;  // highest.
 
   ASTGenerator Astgen(InputFilename);
-  Astgen.Generate();
-
+  auto module = Astgen.Generate();
+  if (!Astgen.IsREPLmode()) {
+      ofstream outputStream;
+      outputStream.open(OutputFilename);
+      if (outputStream) {
+          outputStream << module;
+          outs() << "The Module's IR written into: " << OutputFilename << "\n";
+          outs() << "Use the \"lli\" tool to directly execute it: " << OutputFilename << "\n";
+      } else errs() << "Failed to open the file " << OutputFilename << " for write\n";
+  }
   return 0;
 }

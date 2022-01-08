@@ -16,11 +16,22 @@ ASTGenerator::ASTGenerator(const std::string &filename) {
     CodeGen::Builder = std::make_unique<IRBuilder<llvm::NoFolder>>(*CodeGen::TheContext);
 }
 
-void ASTGenerator::Generate() {
+std::string ASTGenerator::Generate() {
     while (currToken != tok_eof) {
         if (interactShellMode)
             fprintf(stderr, "kal> ");
         currToken = parser.EatToken();
     }
 //    errs() << *CodeGen::TheModule;
+//    CodeGen::TheModule->print(llvm::errs(), nullptr);
+    std::string ModuleStr;
+    raw_string_ostream OS(ModuleStr);
+    OS << *CodeGen::TheModule;
+    OS.flush();
+
+    return ModuleStr;
+}
+
+bool ASTGenerator::IsREPLmode() {
+    return interactShellMode;
 }
