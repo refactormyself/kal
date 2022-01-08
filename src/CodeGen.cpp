@@ -44,17 +44,17 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
 
         switch (Op) {
             case '+':
-                return BinaryOperator::CreateAdd(Left, Right, "iaddtmp");
+                return CodeGen::Builder->CreateAdd(Left, Right, "iaddtmp");
             case '-':
-                return BinaryOperator::CreateSub(Left, Right, "isubtmp");
+                return CodeGen::Builder->CreateSub(Left, Right, "isubtmp");
             case '*':
-                return BinaryOperator::CreateMul(Left, Right, "imultmp");
+                return CodeGen::Builder->CreateMul(Left, Right, "imultmp");
             case '/':
-                return BinaryOperator::CreateUDiv(Left, Right, "idivtmp");
+                return CodeGen::Builder->CreateUDiv(Left, Right, "idivtmp");
             case '<':
-                return new ICmpInst(ICmpInst::ICMP_ULT, Left, Right);
+                return CodeGen::Builder->CreateFCmpULT(Left, Right, "icmplttmp");
             case '>':
-                return new ICmpInst(ICmpInst::ICMP_UGT, Left, Right);
+                return CodeGen::Builder->CreateICmpUGT(Left, Right, "icmpgttmp");
             default:
                 ErrorLogger::LogError("invalid binary operator");
                 return nullptr;
@@ -65,21 +65,22 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
         if (Right->getType() != Left->getType())
             Right = CodeGen::Builder->CreateUIToFP(Right, Left->getType(), "uitofp");
 
-
         switch (Op) {
             case '+':
-                return BinaryOperator::CreateFAdd(Left, Right, "iaddtmp");
+                return CodeGen::Builder->CreateFAdd(Left, Right, "faddtmp");
             case '-':
-                return BinaryOperator::CreateFSub(Left, Right, "isubtmp");
+                return CodeGen::Builder->CreateFSub(Left, Right, "fsubtmp");
             case '*':
-                return BinaryOperator::CreateFMul(Left, Right, "imultmp");
+                return CodeGen::Builder->CreateFMul(Left, Right, "fmultmp");
             case '/':
-                return BinaryOperator::CreateFDiv(Left, Right, "idivtmp");
+                return CodeGen::Builder->CreateFDiv(Left, Right, "fdivtmp");
             case '<':
-                return new FCmpInst(FCmpInst::ICMP_ULT, Left, Right);
+                return CodeGen::Builder->CreateFCmpULT(Left, Right, "fcmpgttmp");
             case '>':
                 // TODO: Convert bool 0/1 to double 0.0 or 1.0
-                return new FCmpInst(FCmpInst::ICMP_UGT, Left, Right);
+                Left = CodeGen::Builder->CreateFCmpULT(Left, Right, "fcmplttmp");
+                // Convert bool 0/1 to double 0.0 or 1.0
+                return CodeGen::Builder->CreateUIToFP(Left, Type::getDoubleTy(*CodeGen::TheContext), "booltmp");
             default:
                 ErrorLogger::LogError("invalid binary operator");
                 return nullptr;
@@ -181,7 +182,6 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
         return;
     }
 
-//    errs() << *TheFunction;
     errs() << "Error reading body.\n";
     // Error reading body, remove function.
     TheFunction->eraseFromParent();

@@ -36,7 +36,7 @@ int main(int argc, char **argv)
       if (outputStream) {
           outputStream << module;
           outs() << "The Module's IR written into: " << OutputFilename << "\n";
-          outs() << "Use the \"lli\" tool to directly execute it: " << OutputFilename << "\n";
+          outs() << "Use the \"lli\" tool to directly execute it.\n";
       } else errs() << "Failed to open the file " << OutputFilename << " for write\n";
   }
   return 0;
