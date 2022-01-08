@@ -77,6 +77,7 @@ namespace kal {
         void Perform(Operation &op) override;
     };
 
+//    TODO: Implement typed functions, arguments, variables
 /// PrototypeAST - This class represents the "prototype" for a function,
 /// which captures its name, and its argument names (thus implicitly the number
 /// of arguments the function takes).

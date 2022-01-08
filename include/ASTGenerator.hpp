@@ -16,7 +16,7 @@ namespace kal{
         explicit ASTGenerator(const std::string &filename);
         std::string Generate();
 
-        bool IsREPLmode();
+        bool IsREPLmode() const;
     };
 }
 #endif //ASTGENERATOR_HPP

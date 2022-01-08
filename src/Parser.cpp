@@ -103,7 +103,7 @@ std::shared_ptr<ExprAST> Parser::ParseExpression() {
 std::shared_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
     if (auto E = ParseExpression()) {
         // Make an anonymous proto.
-        auto Proto = std::make_shared<PrototypeAST>("__anon_expr",
+        auto Proto = std::make_shared<PrototypeAST>("main",
                                                     std::vector<std::string>());
         return std::make_shared<FunctionAST>(std::move(Proto), std::move(E));
     }

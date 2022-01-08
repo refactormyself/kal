@@ -32,6 +32,6 @@ std::string ASTGenerator::Generate() {
     return ModuleStr;
 }
 
-bool ASTGenerator::IsREPLmode() {
+bool ASTGenerator::IsREPLmode() const {
     return interactShellMode;
 }

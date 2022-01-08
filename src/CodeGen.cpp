@@ -36,6 +36,12 @@ void CodeGen::On(std::shared_ptr<UnaryExprAST> uniExprAST) {
 
 Value * CreateOp(char Op, Value *Left, Value *Right) {
     if (Left->getType()->isIntegerTy()) {
+//        TODO: remove this when static types are supported
+        // convert to double
+        Left = CodeGen::Builder->
+                CreateUIToFP(Left, Type::getDoubleTy(*CodeGen::TheContext), "uitofp");
+
+/*
         if (Right->getType() != Left->getType()) {
 //            Right->mutateType(Left->getType());
 //            Right = CastInst::Create(llvm::Instruction::FPToUI, Right, Left->getType(), "fptoui");
@@ -59,9 +65,10 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
                 ErrorLogger::LogError("invalid binary operator");
                 return nullptr;
         }
+        */
     }
 
-    if (Left->getType()->isDoubleTy() || Left->getType()->isFloatTy()) {
+//    if (Left->getType()->isDoubleTy() || Left->getType()->isFloatTy()) {
         if (Right->getType() != Left->getType())
             Right = CodeGen::Builder->CreateUIToFP(Right, Left->getType(), "uitofp");
 
@@ -85,11 +92,11 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
                 ErrorLogger::LogError("invalid binary operator");
                 return nullptr;
         }
-    }
+//    }
 
-    Left->getType()->print(errs());
-    ErrorLogger::LogError("invalid type detected!");
-    return nullptr;
+//    Left->getType()->print(errs());
+//    ErrorLogger::LogError("invalid type detected!");
+//    return nullptr;
 }
 
 void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
