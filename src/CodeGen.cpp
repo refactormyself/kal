@@ -11,6 +11,7 @@ using namespace std;
 std::unique_ptr<llvm::LLVMContext> CodeGen::TheContext;
 std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> CodeGen::Builder;
 std::unique_ptr<llvm::Module> CodeGen::TheModule;
+std::map<std::string, llvm::Value *> CodeGen::NamedValues;
 
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
     valueResult = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);
@@ -105,9 +106,9 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
 //    Value *Right = binExprAST->getRHS()->Perform(codegen);
 
     binExprAST->getLHS()->Perform(codegen);
-    auto Left = codegen.GetValueResult();
+    auto Left = codegen.TakeValueResult();
     binExprAST->getRHS()->Perform(codegen);
-    auto Right = codegen.GetValueResult();
+    auto Right = codegen.TakeValueResult();
 
     if (!Left || !Right)
         return;
@@ -127,12 +128,20 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
 //    } else ErrorLogger::LogError("No IR was generated!");
 }
 
-llvm::Value *CodeGen::GetValueResult() {
-    return valueResult;
+//// Returns current value of Codegen::valueResult
+//// and reset it to nullptr
+llvm::Value *CodeGen::TakeValueResult() {
+    auto ret = valueResult;
+    valueResult = nullptr; // reset
+    return ret;
 }
 
-llvm::Function *CodeGen::GetFunctionResult() {
-    return functionResult;
+//// Returns current value of Codegen::functionResult
+//// and reset it to nullptr
+llvm::Function *CodeGen::TakeFunctionResult() {
+    auto ret = functionResult;
+    functionResult = nullptr; // reset
+    return ret;
 }
 
 void CodeGen::On(std::shared_ptr<PrototypeAST> prototypeAST) {
@@ -160,7 +169,7 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
 
     if (!TheFunction) {
         proto->Perform(codegen);
-        TheFunction = codegen.GetFunctionResult();
+        TheFunction = codegen.TakeFunctionResult();
     }
 
     if (!TheFunction)
@@ -176,7 +185,7 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
         NamedValues[std::string(Arg.getName())] = &Arg;
 
     body->Perform(codegen);
-    Value *RetVal = codegen.GetValueResult();
+    Value *RetVal = codegen.TakeValueResult();
     if (RetVal) {
         // Finish off the function.
         Builder->CreateRet(RetVal);
@@ -220,7 +229,7 @@ void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {
     CodeGen codeGen;
     for (auto & arg : callExprAST->getArgs()) {
         arg->Perform(codeGen);
-        ArgsV.push_back(codeGen.GetValueResult());
+        ArgsV.push_back(codeGen.TakeValueResult());
         if (!ArgsV.back())
             return;
     }

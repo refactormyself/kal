@@ -24,7 +24,6 @@ namespace kal {
 
     class CodeGen : public Operation {
     private:
-        std::map<std::string, llvm::Value *> NamedValues;
         llvm::Value *valueResult = nullptr;
         llvm::Function *functionResult = nullptr;
 
@@ -38,11 +37,12 @@ namespace kal {
         void On(std::shared_ptr<VariableExprAST> variableExprAST) override;
         void On(std::shared_ptr<CallExprAST> callExprAST) override;
 
-        llvm::Value *GetValueResult();
-        llvm::Function *GetFunctionResult();
+        llvm::Value *TakeValueResult();
+        llvm::Function *TakeFunctionResult();
         static std::unique_ptr<llvm::LLVMContext> TheContext;
         static std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> Builder;
         static std::unique_ptr<llvm::Module> TheModule;
+        static std::map<std::string, llvm::Value *> NamedValues;
     };
 }
 

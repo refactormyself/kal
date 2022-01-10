@@ -216,7 +216,7 @@ void Parser::HandleDefinition() {
     if (auto FnAST = ParseDefinition()) {
         CodeGen codeGen;
         FnAST->Perform(codeGen);
-        if (auto *FnIR = codeGen.GetFunctionResult()) {
+        if (auto *FnIR = codeGen.TakeFunctionResult()) {
             fprintf(stderr, "Read function definition:");
             FnIR->print(errs());
             fprintf(stderr, "\n");
@@ -237,7 +237,7 @@ void Parser::HandleExtern() {
     if (auto ProtoAST = ParseExtern()) {
         CodeGen codeGen;
         ProtoAST->Perform(codeGen);
-        if (auto *FnIR = codeGen.GetFunctionResult()) {
+        if (auto *FnIR = codeGen.TakeFunctionResult()) {
             fprintf(stderr, "Read extern: ");
             FnIR->print(errs());
             fprintf(stderr, "\n");
