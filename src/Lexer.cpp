@@ -49,11 +49,10 @@ int Lexer::GetToken() {
         while (isalnum((lastChar = Getnextchar())))
             IdentifierStr += lastChar;
 
-        // check for reserved identifiers
-        if (IdentifierStr == "binary")
-            return tok_binary;
-        if (IdentifierStr == "unary")
-            return tok_unary;
+        if (IdentifierStr == "def")
+            return tok_def;
+        if (IdentifierStr == "extern")
+            return tok_extern;
 
         return tok_identifier;
     }

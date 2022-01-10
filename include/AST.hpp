@@ -39,16 +39,31 @@ namespace kal {
         double GetVal() const;
     };
 
-    // /// VariableExprAST - Expression class for referencing a variable, like "a".
-    // class VariableExprAST : public ExprAST {
-    //   std::string Name;
+     /// VariableExprAST - Expression class for referencing a variable, like "a".
+     class VariableExprAST : public ExprAST , public std::enable_shared_from_this<VariableExprAST> {
+         std::string Name;
 
-    // public:
-    //   VariableExprAST(const std::string &Name) : Name(Name) {}
+     public:
+         explicit VariableExprAST(std::string Name) : Name(std::move(Name)) {}
 
-    //   Value *codegen() override;
-    //   const std::string &getName() const { return Name; }
-    // };
+         void Perform(Operation &op) override;
+         const std::string &getName() const { return Name; }
+     };
+
+/// CallExprAST - Expression class for function calls.
+    class CallExprAST : public ExprAST , public std::enable_shared_from_this<CallExprAST> {
+        std::string Callee;
+        std::vector<std::shared_ptr<ExprAST>> Args;
+
+    public:
+        CallExprAST(std::string Callee,
+                    std::vector<std::shared_ptr<ExprAST>> Args)
+                : Callee(std::move(Callee)), Args(std::move(Args)) {}
+
+        void Perform(Operation &op) override;
+        const std::string &getCallee() const { return Callee; }
+        const std::vector<std::shared_ptr<ExprAST>> & getArgs() const { return Args; }
+    };
 
     /// UnaryExprAST - Expression class for a unary operator.
     class UnaryExprAST : public ExprAST, public std::enable_shared_from_this<UnaryExprAST>
@@ -118,6 +133,8 @@ namespace kal {
         virtual void On(std::shared_ptr<BinaryExprAST> binExprAST) = 0;
         virtual void On(std::shared_ptr<PrototypeAST> prototypeAST) = 0;
         virtual void On(std::shared_ptr<FunctionAST> functionAST) = 0;
+        virtual void On(std::shared_ptr<CallExprAST> prototypeAST) = 0;
+        virtual void On(std::shared_ptr<VariableExprAST> functionAST) = 0;
     };
 }
 #endif //AST_HPP

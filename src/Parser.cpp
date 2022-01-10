@@ -42,8 +42,8 @@ std::shared_ptr<ExprAST> Parser::ParsePrimary() {
   switch (currToken) {
   default:
     return ErrorLogger::LogError("unknown token when expecting an expression");
-  // case tok_identifier:
-  //   return ParseIdentifierExpr();
+   case tok_identifier:
+     return ParseIdentifierExpr();
   case tok_integer:
     return ParseIntegerExpr();
   case tok_float:
@@ -134,6 +134,120 @@ void Parser::HandleTopLevelExpression() {
   }
 }
 
+/// identifierexpr
+///   ::= identifier
+///   ::= identifier '(' expression* ')'
+std::shared_ptr<ExprAST> Parser::ParseIdentifierExpr() {
+    std::string IdName = lexer.IdentifierStr;
+
+    currToken = lexer.GetToken(); // eat identifier.
+
+    if (currToken != '(') // Simple variable ref.
+        return std::make_shared<VariableExprAST>(IdName);
+
+    // Call.
+    currToken = lexer.GetToken(); // eat (
+    std::vector<std::shared_ptr<ExprAST>> Args;
+    if (currToken != ')') {
+        while (true) {
+            if (auto Arg = ParseExpression())
+                Args.push_back(std::move(Arg));
+            else
+                return nullptr;
+
+            if (currToken == ')')
+                break;
+
+            if (currToken != ',')
+                return ErrorLogger::LogError("Expected ')' or ',' in argument list");
+            currToken = lexer.GetToken();
+        }
+    }
+
+    // Eat the ')'.
+    currToken = lexer.GetToken();
+
+    return std::make_shared<CallExprAST>(IdName, std::move(Args));
+}
+
+/// prototype
+///   ::= id '(' id* ')'
+std::shared_ptr<PrototypeAST> Parser::ParsePrototype() {
+    if (currToken != tok_identifier) {
+        ErrorLogger::LogError("Expected function name in prototype");
+        return nullptr;
+    }
+
+    std::string FnName = lexer.IdentifierStr;
+    currToken = lexer.GetToken();
+
+    if (currToken != '(') {
+        ErrorLogger::LogError("Expected '(' in prototype");
+        return nullptr;
+    }
+
+    std::vector<std::string> ArgNames;
+    while ((currToken = lexer.GetToken()) == tok_identifier)
+        ArgNames.push_back(lexer.IdentifierStr);
+
+    if (currToken != ')') {
+        ErrorLogger::LogError("Expected ')' in prototype");
+        return nullptr;
+    }
+    // success.
+    currToken = lexer.GetToken(); // eat ')'.
+
+    return std::make_shared<PrototypeAST>(FnName, std::move(ArgNames));
+}
+
+/// definition ::= 'def' prototype expression
+std::shared_ptr<FunctionAST> Parser::ParseDefinition() {
+    currToken = lexer.GetToken(); // eat def.
+    auto Proto = ParsePrototype();
+    if (!Proto)
+        return nullptr;
+
+    if (auto BodyExpr = ParseExpression())
+        return std::make_shared<FunctionAST>(std::move(Proto), std::move(BodyExpr));
+    return nullptr;
+}
+
+void Parser::HandleDefinition() {
+    if (auto FnAST = ParseDefinition()) {
+        CodeGen codeGen;
+        FnAST->Perform(codeGen);
+        if (auto *FnIR = codeGen.GetFunctionResult()) {
+            fprintf(stderr, "Read function definition:");
+            FnIR->print(errs());
+            fprintf(stderr, "\n");
+        }
+    } else {
+        // Skip token for error recovery.
+        currToken = lexer.GetToken();
+    }
+}
+
+/// external ::= 'extern' prototype
+std::shared_ptr<PrototypeAST> Parser::ParseExtern() {
+    currToken = lexer.GetToken(); // eat extern.
+    return ParsePrototype();
+}
+
+void Parser::HandleExtern() {
+    if (auto ProtoAST = ParseExtern()) {
+        CodeGen codeGen;
+        ProtoAST->Perform(codeGen);
+        if (auto *FnIR = codeGen.GetFunctionResult()) {
+            fprintf(stderr, "Read extern: ");
+            FnIR->print(errs());
+            fprintf(stderr, "\n");
+        }
+    } else {
+        // Skip token for error recovery.
+        currToken = lexer.GetToken();
+    }
+}
+
 /// top ::=  expression | ';'
 int Parser::EatToken() {
   switch (currToken = lexer.GetToken()) {
@@ -141,6 +255,12 @@ int Parser::EatToken() {
   case tok_carr_ret:
   case ';': // ignore top-level semicolons.
     break;
+  case tok_def:
+      HandleDefinition();
+      break;
+  case tok_extern:
+      HandleExtern();
+      break;
   default:
     HandleTopLevelExpression();
     break;

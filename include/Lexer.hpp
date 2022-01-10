@@ -18,9 +18,9 @@ namespace kal
         tok_integer = -5,
         tok_float = -6,
 
-        // operator tokens
-        tok_binary = -11,
-        tok_unary = -12,
+        // commands
+        tok_def = -8,
+        tok_extern = -9,
 
     };
 

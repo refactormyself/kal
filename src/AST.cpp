@@ -32,6 +32,16 @@ void FunctionAST::Perform(Operation &op) {
     return op.On(ast);
 }
 
+void VariableExprAST::Perform(Operation &op) {
+    std::shared_ptr<VariableExprAST> ast{shared_from_this()};
+    return op.On(ast);
+}
+
+void CallExprAST::Perform(Operation &op) {
+    std::shared_ptr<CallExprAST> ast{shared_from_this()};
+    return op.On(ast);
+}
+
 double FloatExprAST::GetVal() const {
     return Val;
 }

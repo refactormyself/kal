@@ -189,8 +189,41 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
         return;
     }
 
-    errs() << "Error reading body.\n";
+    ErrorLogger::LogError("Error reading body.");
     // Error reading body, remove function.
     TheFunction->eraseFromParent();
     functionResult = nullptr;
+}
+
+void CodeGen::On(std::shared_ptr<VariableExprAST> variableExprAST) {
+    // Look this variable up in the function.
+    valueResult = NamedValues[variableExprAST->getName()];
+    if (!valueResult)
+        ErrorLogger::LogError("Unknown variable name");
+}
+
+void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {
+    // Look up the name in the global module table.
+    Function *CalleeF = TheModule->getFunction(callExprAST->getCallee());
+    if (!CalleeF) {
+        ErrorLogger::LogError("Unknown function referenced");
+        return;
+    }
+
+    // If argument mismatch error.
+    if (CalleeF->arg_size() != callExprAST->getArgs().size()) {
+        ErrorLogger::LogError("Incorrect # arguments passed");
+        return;
+    }
+
+    std::vector<Value *> ArgsV;
+    CodeGen codeGen;
+    for (auto & arg : callExprAST->getArgs()) {
+        arg->Perform(codeGen);
+        ArgsV.push_back(codeGen.GetValueResult());
+        if (!ArgsV.back())
+            return;
+    }
+
+    Builder->CreateCall(CalleeF, ArgsV, "calltmp");
 }

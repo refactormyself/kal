@@ -38,7 +38,10 @@ namespace kal {
     std::shared_ptr<ExprAST> ParseExpression();
     std::shared_ptr<ExprAST> ParseBinOpRHS(int ExprPrec,
                                            std::shared_ptr<ExprAST> LHS);
-
+      std::shared_ptr<FunctionAST> ParseTopLevelExpr();
+      std::shared_ptr<FunctionAST> ParseDefinition();
+      std::shared_ptr<PrototypeAST> ParsePrototype();
+      std::shared_ptr<PrototypeAST> ParseExtern();
     void HandleTopLevelExpression();
     int GetTokenPrecedence() const;
 
@@ -49,7 +52,11 @@ namespace kal {
     int EatToken();
     static std::map<char, int> BinopPrecedence;
 
-      std::shared_ptr<FunctionAST> ParseTopLevelExpr();
+
+      void HandleExtern();
+      void HandleDefinition();
+
+      std::shared_ptr<ExprAST> ParseIdentifierExpr();
   };
 }
 #endif // PARSER_HPP

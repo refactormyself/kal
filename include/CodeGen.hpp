@@ -35,6 +35,8 @@ namespace kal {
         void On(std::shared_ptr<BinaryExprAST> binExprAST) override;
         void On(std::shared_ptr<PrototypeAST> prototypeAST) override;
         void On(std::shared_ptr<FunctionAST> functionAST) override;
+        void On(std::shared_ptr<VariableExprAST> variableExprAST) override;
+        void On(std::shared_ptr<CallExprAST> callExprAST) override;
 
         llvm::Value *GetValueResult();
         llvm::Function *GetFunctionResult();
