@@ -194,7 +194,7 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
         verifyFunction(*TheFunction);
 
         functionResult = TheFunction;
-        errs() << *TheFunction;
+//        errs() << *TheFunction;
         return;
     }
 

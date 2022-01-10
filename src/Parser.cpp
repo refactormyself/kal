@@ -216,11 +216,12 @@ void Parser::HandleDefinition() {
     if (auto FnAST = ParseDefinition()) {
         CodeGen codeGen;
         FnAST->Perform(codeGen);
-        if (auto *FnIR = codeGen.TakeFunctionResult()) {
-            fprintf(stderr, "Read function definition:");
-            FnIR->print(errs());
-            fprintf(stderr, "\n");
-        }
+//        auto *FnIR = codeGen.TakeFunctionResult();
+//        if (FnIR) {
+//            fprintf(stderr, "Read function definition:\n");
+//            FnIR->print(errs());
+//            fprintf(stderr, "\n");
+//        }
     } else {
         // Skip token for error recovery.
         currToken = lexer.GetToken();
@@ -237,11 +238,12 @@ void Parser::HandleExtern() {
     if (auto ProtoAST = ParseExtern()) {
         CodeGen codeGen;
         ProtoAST->Perform(codeGen);
-        if (auto *FnIR = codeGen.TakeFunctionResult()) {
-            fprintf(stderr, "Read extern: ");
-            FnIR->print(errs());
-            fprintf(stderr, "\n");
-        }
+//        auto *FnIR = codeGen.TakeFunctionResult();
+//        if (FnIR) {
+//            fprintf(stderr, "Read extern: \n");
+//            FnIR->print(errs());
+//            fprintf(stderr, "\n");
+//        }
     } else {
         // Skip token for error recovery.
         currToken = lexer.GetToken();
