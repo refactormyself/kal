@@ -21,10 +21,6 @@
 #include <memory>
 
 namespace kal {
-  /// BinopPrecedence - This holds the precedence for each binary operator that is
-  /// defined.
-  
-
   class Parser
   {
   private:

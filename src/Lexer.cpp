@@ -18,8 +18,9 @@ Lexer::Lexer(const std::string &inputFilename) {
         // outs() << "Yep, I can read the file " << inputFilename << " \n";
         interactShellMode = false;
     } else {
-        outs() << "Error: There is a problem reading the file "
+        errs() << "Error: There is a problem reading the file "
                << inputFilename << " ! \n";
+        EXIT_FAILURE;
     }
 }
 
