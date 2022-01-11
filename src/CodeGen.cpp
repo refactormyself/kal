@@ -231,7 +231,7 @@ void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {
     for (auto & arg : callExprAST->getArgs()) {
         arg->Perform(codeGen);
         auto value = codeGen.TakeValueResult();
-        if (value->getType()->isIntegerTy()){
+        if (value && value->getType()->isIntegerTy()){
             value = CodeGen::Builder->
                     CreateUIToFP(value, Type::getDoubleTy(*CodeGen::TheContext), "uitofp");
         }
