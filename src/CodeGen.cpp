@@ -186,22 +186,23 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
 
     body->Perform(codegen);
     Value *RetVal = codegen.TakeValueResult();
-    if (RetVal) {
-        // Finish off the function.
-        Builder->CreateRet(RetVal);
 
-        // Validate the generated code, checking for consistency.
-        verifyFunction(*TheFunction);
-
-        functionResult = TheFunction;
-//        errs() << *TheFunction;
+    // Finish off the function.
+    if (RetVal) { Builder->CreateRet(RetVal); }
+    else if (TheFunction->getName() == "main")
+//        Builder->CreateRet(nullptr); // return void
+        Builder->CreateRet(ConstantFP::getNegativeZero(TheFunction->getReturnType()));
+    else {
+        ErrorLogger::LogError("Error reading body.");
+        // Error reading body, remove function.
+        TheFunction->eraseFromParent();
+        functionResult = nullptr;
         return;
     }
-
-    ErrorLogger::LogError("Error reading body.");
-    // Error reading body, remove function.
-    TheFunction->eraseFromParent();
-    functionResult = nullptr;
+    // Validate the generated code, checking for consistency.
+    verifyFunction(*TheFunction);
+    functionResult = TheFunction;
+//        errs() << *TheFunction;
 }
 
 void CodeGen::On(std::shared_ptr<VariableExprAST> variableExprAST) {
@@ -229,7 +230,12 @@ void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {
     CodeGen codeGen;
     for (auto & arg : callExprAST->getArgs()) {
         arg->Perform(codeGen);
-        ArgsV.push_back(codeGen.TakeValueResult());
+        auto value = codeGen.TakeValueResult();
+        if (value->getType()->isIntegerTy()){
+            value = CodeGen::Builder->
+                    CreateUIToFP(value, Type::getDoubleTy(*CodeGen::TheContext), "uitofp");
+        }
+        ArgsV.push_back(value);
         if (!ArgsV.back())
             return;
     }
