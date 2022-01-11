@@ -93,7 +93,7 @@ int Lexer::GetToken() {
         while (lastChar != EOF && lastChar != '\n' && lastChar != '\r');
 
         if (lastChar != EOF)
-            return Getnextchar();
+            return tok_carr_ret; // treat comments as new line
     }
 
     // Check for end of file.  Don't eat the EOF.
