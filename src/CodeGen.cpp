@@ -11,7 +11,16 @@ using namespace std;
 std::unique_ptr<llvm::LLVMContext> CodeGen::TheContext;
 std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> CodeGen::Builder;
 std::unique_ptr<llvm::Module> CodeGen::TheModule;
-std::map<std::string, llvm::Value *> CodeGen::NamedValues;
+std::map<std::string, llvm::AllocaInst *> CodeGen::NamedValues;
+
+/// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
+/// the function.  This is used for mutable variables etc.
+static AllocaInst *CreateEntryBlockAlloca(Function *TheFunction, const std::string &VarName) {
+    IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
+    return TmpB.CreateAlloca(Type::getDoubleTy(*CodeGen::TheContext),
+                             0,
+                             VarName);
+}
 
 void CodeGen::On(std::shared_ptr<IntegerExprAST> intExprAST) {
     valueResult = llvm::ConstantInt::get(Type::getInt32Ty(*TheContext), intExprAST->GetVal(), true);
@@ -181,8 +190,16 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
 
     // Record the function arguments in the NamedValues map.
     NamedValues.clear();
-    for (auto &Arg : TheFunction->args())
-        NamedValues[std::string(Arg.getName())] = &Arg;
+    for (auto &Arg : TheFunction->args()) {
+        // Create an alloca for this variable argument.
+        AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName().str());
+
+        // Store the initial value into the alloca.
+        Builder->CreateStore(&Arg, Alloca);
+
+        // Add arguments to variable symbol table.
+        NamedValues[Arg.getName().str()] = Alloca;
+    }
 
     body->Perform(codegen);
     Value *RetVal = codegen.TakeValueResult();
@@ -210,6 +227,11 @@ void CodeGen::On(std::shared_ptr<VariableExprAST> variableExprAST) {
     valueResult = NamedValues[variableExprAST->getName()];
     if (!valueResult)
         ErrorLogger::LogError("Unknown variable name");
+
+    // Load the value.
+    // auto valueType = //(double) TODO: get the type of the variable. Should be stored in NamedValues
+    valueResult = Builder->CreateLoad(Type::getDoubleTy(*TheContext),
+                                      valueResult,variableExprAST->getName());
 }
 
 void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {

@@ -42,7 +42,7 @@ namespace kal {
         static std::unique_ptr<llvm::LLVMContext> TheContext;
         static std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> Builder;
         static std::unique_ptr<llvm::Module> TheModule;
-        static std::map<std::string, llvm::Value *> NamedValues;
+        static std::map<std::string, llvm::AllocaInst *> NamedValues; // AllocaInst gives the variable's memory location
     };
 }
 
