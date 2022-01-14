@@ -111,9 +111,38 @@ Value * CreateOp(char Op, Value *Left, Value *Right) {
 
 void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
     CodeGen codegen{};
-//    Value *Left = binExprAST->getLHS()->Perform(codegen);
-//    Value *Right = binExprAST->getRHS()->Perform(codegen);
 
+    // Special case '=' :
+    // we don't want to emit the LHS as an expression (it must be an identifier).
+    if (binExprAST->getOp() == '=') {
+        // Assignment requires the LHS to be an identifier.
+        // This assume we're building without RTTI because LLVM builds that way by
+        // default.  If you build LLVM with RTTI this can be changed to a
+        // dynamic_cast for automatic error checking. "Error: Use of dynamic_cast requires -frtti"
+        auto *LHSE = static_cast<VariableExprAST *>(binExprAST->getLHS().get());
+        if (!LHSE) {
+            ErrorLogger::LogError("destination of '=' must be a variable");
+            return;
+        }
+
+        binExprAST->getRHS()->Perform(codegen);
+        auto Right = codegen.TakeValueResult();
+        if (!Right)
+            return;
+
+        // Look up the name.
+        Value *Variable = NamedValues[LHSE->getName()];
+        if (!Variable) {
+            ErrorLogger::LogError("Unknown variable name");
+            return;
+        }
+
+        Builder->CreateStore(Right, Variable);
+        valueResult = Right;
+        return;
+    }
+
+    // General case:
     binExprAST->getLHS()->Perform(codegen);
     auto Left = codegen.TakeValueResult();
     binExprAST->getRHS()->Perform(codegen);
@@ -122,7 +151,6 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
     if (!Left || !Right)
         return;
 
-    // the type of LHS prevails
     valueResult = CreateOp(binExprAST->getOp(), Left, Right);
 
 ////    if (auto *FnIR = exprAST->codegen()) {

@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 
   // Install standard binary operators.
   // 1 is lowest precedence.
+  Parser::BinopPrecedence['='] = 2;
   Parser::BinopPrecedence['<'] = 10;
   Parser::BinopPrecedence['+'] = 20;
   Parser::BinopPrecedence['-'] = 20;
