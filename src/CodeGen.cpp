@@ -116,29 +116,39 @@ void CodeGen::On(std::shared_ptr<BinaryExprAST> binExprAST) {
     // we don't want to emit the LHS as an expression (it must be an identifier).
     if (binExprAST->getOp() == '=') {
         // Assignment requires the LHS to be an identifier.
-        // This assume we're building without RTTI because LLVM builds that way by
+        // This assumes we're building without RTTI because LLVM builds that way by
         // default.  If you build LLVM with RTTI this can be changed to a
         // dynamic_cast for automatic error checking. "Error: Use of dynamic_cast requires -frtti"
-        auto *LHSE = static_cast<VariableExprAST *>(binExprAST->getLHS().get());
-        if (!LHSE) {
+        auto *leftOfEquals = static_cast<VariableExprAST *>(binExprAST->getLHS().get());
+        if (!leftOfEquals) {
             ErrorLogger::LogError("destination of '=' must be a variable");
             return;
         }
 
         binExprAST->getRHS()->Perform(codegen);
-        auto Right = codegen.TakeValueResult();
-        if (!Right)
+        auto rightOfEquals = codegen.TakeValueResult();
+        if (!rightOfEquals)
             return;
 
         // Look up the name.
-        Value *Variable = NamedValues[LHSE->getName()];
-        if (!Variable) {
-            ErrorLogger::LogError("Unknown variable name");
-            return;
+        auto variable = NamedValues[leftOfEquals->getName()];
+        if (!variable) { // Create the new variable
+            // ErrorLogger::LogError("Unknown variable name");
+
+            // Create an alloca for this variable.
+            variable = CreateEntryBlockAlloca(functionResult, leftOfEquals->getName());
+            // Add it to the variable symbol table.
+            NamedValues[leftOfEquals->getName()] = variable;
         }
 
-        Builder->CreateStore(Right, Variable);
-        valueResult = Right;
+        if (rightOfEquals->getType()->isIntegerTy()) {
+            rightOfEquals = Builder->CreateUIToFP(rightOfEquals,
+                                                  Type::getDoubleTy(*TheContext),
+                                                  "uitofp");
+        }
+
+        Builder->CreateStore(rightOfEquals, variable);
+        valueResult = rightOfEquals;
         return;
     }
 
@@ -177,7 +187,7 @@ llvm::Value *CodeGen::TakeValueResult() {
 //// and reset it to nullptr
 llvm::Function *CodeGen::TakeFunctionResult() {
     auto ret = functionResult;
-    functionResult = nullptr; // reset
+//    functionResult = nullptr; // reset
     return ret;
 }
 
@@ -202,31 +212,35 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
     auto body = functionAST->getBody();
 
     // First, check for an existing function from a previous 'extern' declaration.
-    Function *TheFunction = TheModule->getFunction(proto->getName());
+    functionResult = TheModule->getFunction(proto->getName());
 
-    if (!TheFunction) {
+    if (!functionResult) {
         proto->Perform(codegen);
-        TheFunction = codegen.TakeFunctionResult();
+        functionResult = codegen.TakeFunctionResult();
     }
 
-    if (!TheFunction)
+    if (!functionResult)
         return;
+    else
+        codegen.SetFunction(functionResult); // TODO: this is a hack
 
     // Create a new basic block to start insertion into.
-    BasicBlock *BB = BasicBlock::Create(*TheContext, "entry", TheFunction);
+    BasicBlock *BB = BasicBlock::Create(*TheContext, "entry", functionResult);
     Builder->SetInsertPoint(BB);
 
-    // Record the function arguments in the NamedValues map.
-    NamedValues.clear();
-    for (auto &Arg : TheFunction->args()) {
-        // Create an alloca for this variable argument.
-        AllocaInst *Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName().str());
+    if (proto->getName() != "main") {
+        // Record the function arguments in the NamedValues map.
+        NamedValues.clear();
+        for (auto &Arg: functionResult->args()) {
+            // Create an alloca for this variable argument.
+            AllocaInst *Alloca = CreateEntryBlockAlloca(functionResult, Arg.getName().str());
 
-        // Store the initial value into the alloca.
-        Builder->CreateStore(&Arg, Alloca);
+            // Store the initial value into the alloca.
+            Builder->CreateStore(&Arg, Alloca);
 
-        // Add arguments to variable symbol table.
-        NamedValues[Arg.getName().str()] = Alloca;
+            // Add arguments to variable symbol table.
+            NamedValues[Arg.getName().str()] = Alloca;
+        }
     }
 
     body->Perform(codegen);
@@ -234,19 +248,18 @@ void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
 
     // Finish off the function.
     if (RetVal) { Builder->CreateRet(RetVal); }
-    else if (TheFunction->getName() == "main")
+    else if (functionResult->getName() == "main")
 //        Builder->CreateRet(nullptr); // return void
-        Builder->CreateRet(ConstantFP::getNegativeZero(TheFunction->getReturnType()));
+        Builder->CreateRet(ConstantFP::getNegativeZero(functionResult->getReturnType()));
     else {
         ErrorLogger::LogError("Error reading body.");
         // Error reading body, remove function.
-        TheFunction->eraseFromParent();
+        functionResult->eraseFromParent();
         functionResult = nullptr;
         return;
     }
     // Validate the generated code, checking for consistency.
-    verifyFunction(*TheFunction);
-    functionResult = TheFunction;
+    verifyFunction(*functionResult);
 //        errs() << *TheFunction;
 }
 
@@ -254,7 +267,7 @@ void CodeGen::On(std::shared_ptr<VariableExprAST> variableExprAST) {
     // Look this variable up in the function.
     valueResult = NamedValues[variableExprAST->getName()];
     if (!valueResult)
-        ErrorLogger::LogError("Unknown variable name");
+        ErrorLogger::LogError((std::string("Unknown variable name: ") + variableExprAST->getName()).c_str());
 
     // Load the value.
     // auto valueType = //(double) TODO: get the type of the variable. Should be stored in NamedValues
@@ -290,5 +303,9 @@ void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {
             return;
     }
 
-    Builder->CreateCall(CalleeF, ArgsV, "calltmp");
+    valueResult = Builder->CreateCall(CalleeF, ArgsV, "calltmp");
+}
+
+void CodeGen::SetFunction(llvm::Function *function) {
+    functionResult = function;
 }
