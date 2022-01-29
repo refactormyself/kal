@@ -12,6 +12,7 @@ std::unique_ptr<llvm::LLVMContext> CodeGen::TheContext;
 std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> CodeGen::Builder;
 std::unique_ptr<llvm::Module> CodeGen::TheModule;
 std::map<std::string, llvm::AllocaInst *> CodeGen::NamedValues;
+std::map<std::string, std::shared_ptr<PrototypeAST>> CodeGen::FunctionProtos;
 
 /// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 /// the function.  This is used for mutable variables etc.
@@ -206,13 +207,35 @@ void CodeGen::On(std::shared_ptr<PrototypeAST> prototypeAST) {
         Arg.setName(prototypeAST->getArgs()[Idx++]);
 }
 
+Function *CodeGen::getFunction(const std::string& name) {
+    // First, see if the function has already been added to the current module.
+    //       e.g. from a previous 'extern' declaration.
+    if (auto *F = TheModule->getFunction(name))
+        return F;
+
+    // If not, check whether we can codegen the declaration from some existing
+    // prototype.
+    auto FI = FunctionProtos.find(name);
+    if (FI != FunctionProtos.end()) {
+        CodeGen codegen;
+        FI->second->Perform(codegen);
+        return codegen.TakeFunctionResult();
+    }
+
+    // If no existing prototype exists, return null.
+    return nullptr;
+}
+
 void CodeGen::On(std::shared_ptr<FunctionAST> functionAST) {
     CodeGen codegen{};
     auto proto = functionAST->getPrototype();
     auto body = functionAST->getBody();
 
-    // First, check for an existing function from a previous 'extern' declaration.
-    functionResult = TheModule->getFunction(proto->getName());
+    // Transfer ownership of the prototype to the FunctionProtos map,
+    // we still hold its shared_ptr for use below.
+    FunctionProtos[proto->getName()] = std::move(functionAST->getPrototype());
+
+    functionResult = getFunction(std::__cxx11::string());
 
     if (!functionResult) {
         proto->Perform(codegen);
@@ -277,7 +300,7 @@ void CodeGen::On(std::shared_ptr<VariableExprAST> variableExprAST) {
 
 void CodeGen::On(std::shared_ptr<CallExprAST> callExprAST) {
     // Look up the name in the global module table.
-    Function *CalleeF = TheModule->getFunction(callExprAST->getCallee());
+    Function *CalleeF = getFunction();
     if (!CalleeF) {
         ErrorLogger::LogError("Unknown function referenced");
         return;

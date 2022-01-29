@@ -120,7 +120,7 @@ namespace kal {
                 : Proto(std::move(Proto)), Body(std::move(Body)) {}
 
         void Perform(Operation &op) override;
-        const std::shared_ptr<PrototypeAST> &getPrototype() const;
+        std::shared_ptr<PrototypeAST> getPrototype() const;
         const std::shared_ptr<ExprAST> &getBody() const;
     };
 

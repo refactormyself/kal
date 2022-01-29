@@ -26,6 +26,7 @@ namespace kal {
     private:
         llvm::Value *valueResult = nullptr;
         llvm::Function *functionResult = nullptr;
+        llvm::Function *getFunction(const std::string& name);
 
     public:
         void On(std::shared_ptr<IntegerExprAST>intExprAST) override;
@@ -43,6 +44,7 @@ namespace kal {
         static std::unique_ptr<llvm::IRBuilder<llvm::NoFolder>> Builder;
         static std::unique_ptr<llvm::Module> TheModule;
         static std::map<std::string, llvm::AllocaInst *> NamedValues; // AllocaInst gives the variable's memory location
+        static std::map<std::string, std::shared_ptr<PrototypeAST>> FunctionProtos;
         void SetFunction(llvm::Function *pFunction);
     };
 }

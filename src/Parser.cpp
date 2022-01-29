@@ -244,6 +244,9 @@ void Parser::HandleExtern() {
 //            FnIR->print(errs());
 //            fprintf(stderr, "\n");
 //        }
+
+        // store the prototype in the map
+        CodeGen::FunctionProtos[ProtoAST->getName()] = std::move(ProtoAST);
     } else {
         // Skip token for error recovery.
         currToken = lexer.GetToken();

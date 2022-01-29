@@ -66,6 +66,6 @@ const std::shared_ptr<ExprAST> &FunctionAST::getBody() const {
     return Body;
 }
 
-const std::shared_ptr<PrototypeAST> &FunctionAST::getPrototype() const {
+std::shared_ptr<PrototypeAST> FunctionAST::getPrototype() const {
     return Proto;
 }
